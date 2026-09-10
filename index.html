@@ -6,7 +6,6 @@
     <title>Toko Marhaban - Katalog Online</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom Color Palette Sesuai Logo Toko Marhaban -->
     <script>
         tailwind.config = {
             theme: {
@@ -22,7 +21,6 @@
     <!-- FontAwesome Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
     <style>
-        /* Sembunyikan scrollbar bawaan pada filter huruf */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -51,11 +49,10 @@
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400"></i>
             </div>
 
-            <!-- BILAH FILTER HURUF (A-Z RESPONSIF) -->
+            <!-- BILAH FILTER HURUF -->
             <div class="w-full flex items-center justify-start sm:justify-center sm:flex-wrap gap-1 overflow-x-auto sm:overflow-x-visible py-1 text-xs no-scrollbar" id="letterFilterContainer">
                 <button onclick="selectLetter('semua', event)" class="letter-btn bg-[#D61627] text-white px-2.5 py-1 rounded-full font-bold whitespace-nowrap shadow-sm shrink-0">Semua</button>
                 <button onclick="selectLetter('0-9', event)" class="letter-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-full font-semibold whitespace-nowrap hover:bg-gray-300 shrink-0">0-9</button>
-                <!-- Tombol A-Z di-generate otomatis via JS -->
             </div>
 
         </div>
@@ -102,6 +99,10 @@
                     <input type="text" id="buyerName" placeholder="Contoh: Pak Budi" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#006AB4] outline-none">
                 </div>
                 <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nomor WhatsApp*</label>
+                    <input type="tel" id="buyerPhone" placeholder="Contoh: 081234567890" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#006AB4] outline-none">
+                </div>
+                <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Catatan / Alamat Singkat</label>
                     <textarea id="buyerNote" rows="2" placeholder="Contoh: Ambil sendiri jam 4 sore / Antar ke toko sebelah" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#006AB4] outline-none"></textarea>
                 </div>
@@ -136,13 +137,11 @@
             });
         }
 
-        // 2. LOGIKA PILIH HURUF (MEMAKAI KODE MERAH #D61627)
+        // 2. LOGIKA PILIH HURUF
         function selectLetter(letter, eventObj) {
             selectedLetter = letter;
             
             document.querySelectorAll(".letter-btn").forEach(btn => {
-                btn.style.backgroundColor = "";
-                btn.style.color = "";
                 btn.classList.remove("bg-[#D61627]", "text-white");
                 btn.classList.add("bg-gray-200", "text-gray-700");
             });
@@ -194,7 +193,7 @@
             }
         }
 
-        // 4. RENDER SEMUA PRODUK (WARNA BIRU #006AB4 & MERAH #D61627)
+        // 4. RENDER SEMUA PRODUK
         function renderProducts(items) {
             const container = document.getElementById("productList");
             if (!container) return;
@@ -290,7 +289,7 @@
             }
         }
 
-        // 7. MODAL CHECKOUT DENGAN INPUT ANGKA BISA DIEDIT LANGSUNG
+        // 7. MODAL CHECKOUT
         function openCheckoutModal() {
             renderModalItems();
             document.getElementById("checkoutModal").classList.remove("hidden");
@@ -318,7 +317,6 @@
                             </p>
                         </div>
                         
-                        <!-- KONTROL JUMLAH (INPUT BISA DIKETIK + TOMBOL -/+) -->
                         <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50 shadow-sm shrink-0">
                             <button onclick="updateQty('${productId}', -1)" class="w-8 h-8 text-gray-600 font-bold hover:bg-gray-200 transition flex items-center justify-center">-</button>
                             
@@ -334,7 +332,6 @@
             });
         }
 
-        // FUNGSI UNTUK MENGUBAH JUMLAH LANGSUNG DARI KETIKAN INPUT
         function setCartQty(productId, newQty) {
             const val = parseInt(newQty, 10);
             const index = cart.findIndex(c => String(c.id) === String(productId));
@@ -348,21 +345,23 @@
             }
             
             updateCartUI();
-            
-            // Re-render isi modal secara halus tanpa menutup modal
-            const container = document.getElementById("modalCartItems");
-            if (container && cart.length > 0) {
-                renderModalItems();
-            }
         }
 
-        // 8. KIRIM PESANAN KE N8N
+        // 8. KIRIM PESANAN KE N8N (VALIDASI NAMA & NOMOR WA)
         async function submitOrderToN8n() {
             const buyerName = document.getElementById("buyerName").value.trim();
+            const buyerPhone = document.getElementById("buyerPhone").value.trim();
             const buyerNote = document.getElementById("buyerNote").value.trim();
 
             if (!buyerName) {
                 alert("Mohon isi Nama Pemesan terlebih dahulu.");
+                document.getElementById("buyerName").focus();
+                return;
+            }
+
+            if (!buyerPhone) {
+                alert("Mohon isi Nomor WhatsApp terlebih dahulu.");
+                document.getElementById("buyerPhone").focus();
                 return;
             }
 
@@ -372,6 +371,7 @@
 
             const payload = {
                 buyer_name: buyerName,
+                buyer_phone: buyerPhone,
                 buyer_note: buyerNote,
                 cart_items: cart,
                 total_price: cart.reduce((sum, item) => sum + (item.price * item.qty), 0)
