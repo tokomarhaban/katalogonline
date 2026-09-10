@@ -23,7 +23,7 @@
 
     <!-- HEADER, LOGO, SEARCH BAR & FILTER HURUF -->
     <header class="sticky top-0 z-30 bg-white shadow-md py-3 px-4">
-        <div class="max-w-2xl mx-auto flex flex-col items-center gap-3">
+        <div class="max-w-2xl mx-auto flex flex-col items-center gap-2.5">
             
             <!-- LOGO & NAMA TOKO -->
             <div class="flex items-center justify-center gap-2">
@@ -38,17 +38,17 @@
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400"></i>
             </div>
 
-            <!-- BILAH FILTER HURUF (A-Z & 0-9) -->
-            <!-- Note: sm:justify-center membuat tombol di PC Rata Tengah presisi -->
-            <div class="w-full flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar" id="letterFilterContainer">
-                <button onclick="selectLetter('semua', event)" class="letter-btn bg-green-600 text-white px-3 py-1 rounded-full font-bold whitespace-nowrap shadow-sm">Semua</button>
-                <button onclick="selectLetter('0-9', event)" class="letter-btn bg-gray-200 text-gray-700 px-2.5 py-1 rounded-full font-semibold whitespace-nowrap hover:bg-gray-300">0-9</button>
+            <!-- BILAH FILTER HURUF (RESPONSIF PERFECT) -->
+            <!-- Di Mobile: Scroll horizontal rapi dari kiri ke kanan -->
+            <!-- Di PC (sm:): Flex wrap rapi di tengah, semua tombol muat 100% tanpa terpotong -->
+            <div class="w-full flex items-center justify-start sm:justify-center sm:flex-wrap gap-1 overflow-x-auto sm:overflow-x-visible py-1 text-xs no-scrollbar" id="letterFilterContainer">
+                <button onclick="selectLetter('semua', event)" class="letter-btn bg-green-600 text-white px-2.5 py-1 rounded-full font-bold whitespace-nowrap shadow-sm shrink-0">Semua</button>
+                <button onclick="selectLetter('0-9', event)" class="letter-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-full font-semibold whitespace-nowrap hover:bg-gray-300 shrink-0">0-9</button>
                 <!-- Tombol A-Z di-generate otomatis via JS -->
             </div>
 
         </div>
     </header>
-
     <!-- DAFTAR PRODUK (GRID) -->
     <main class="max-w-md mx-auto p-4">
         <div id="productList" class="grid grid-cols-2 gap-3">
