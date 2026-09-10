@@ -141,17 +141,16 @@ function renderProducts(items) {
         const productId = String(p.id || '').replace(/'/g, "\\'");
 
         return `
-            <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
-                <div>
-                    <img src="${imgUrl}" alt="${nameClean}" class="w-full h-28 object-cover rounded-lg mb-2" loading="lazy">
-                    <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
-                    <p class="text-green-600 font-bold text-xs mb-2">Rp ${priceFormatted}</p>
-                </div>
-                <button onclick="addToCart('${productId}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-1.5 rounded-lg text-xs transition">
-                    + Tambah
-                </button>
-            </div>
-        `;
+    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div>
+            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
+            <p class="text-green-600 font-bold text-xs mb-3">Rp ${priceFormatted}</p>
+        </div>
+        <button onclick="addToCart('${productId}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-1.5 rounded-lg text-xs transition">
+            + Tambah
+        </button>
+    </div>
+`;
     }).join("");
 
     container.innerHTML = htmlCards;
