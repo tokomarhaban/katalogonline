@@ -139,33 +139,37 @@ async function fetchProductsFromSheets() {
         };
 
         // 2. RENDER DAFTAR PRODUK
-        function renderProducts(list) {
-            const container = document.getElementById("productList");
-            container.innerHTML = "";
+        function renderProducts(items) {
+    const container = document.getElementById("productList");
+    container.innerHTML = "";
 
-            if (list.length === 0) {
-                container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Barang tidak ditemukan...</p>`;
-                return;
-            }
+    // Filter produk berdasarkan kategori aktif atau pencarian
+    const filtered = items.filter(p => {
+        const matchesCategory = activeCategory === "semua" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
+        return matchesCategory;
+    });
 
-            list.forEach(p => {
-                container.innerHTML += `
-                    <div class="bg-white p-3 rounded-xl shadow-sm border flex flex-col justify-between">
-                        <div>
-                            <img src="${p.img}" alt="${p.name}" class="w-full h-28 object-cover rounded-md mb-2">
-                            <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500">${p.category}</span>
-                            <h4 class="font-semibold text-sm line-clamp-2 mt-1">${p.name}</h4>
-                        </div>
-                        <div class="mt-3">
-                            <p class="font-bold text-green-600 text-sm mb-2">Rp ${p.price.toLocaleString('id-ID')}</p>
-                            <button onclick="addToCart(${p.id})" class="w-full bg-green-50 hover:bg-green-100 text-green-700 text-xs py-1.5 rounded-lg border border-green-200 font-semibold">
-                                + Keranjang
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
+    if (filtered.length === 0) {
+        container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Tidak ada produk yang cocok.</p>`;
+        return;
+    }
+
+    // Render HTML kartu produk
+    filtered.forEach(p => {
+        container.innerHTML += `
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                <div>
+                    <img src="${p.img}" alt="${p.name}" class="w-full h-32 object-cover rounded-lg mb-3">
+                    <h3 class="font-semibold text-gray-800 text-sm line-clamp-2 mb-1">${p.name}</h3>
+                    <p class="text-green-600 font-bold text-sm mb-2">Rp ${p.price.toLocaleString("id-ID")}</p>
+                </div>
+                <button onclick="addToCart('${p.id}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-2 rounded-lg text-xs transition">
+                    + Tambah
+                </button>
+            </div>
+        `;
+    });
+}
 
         // 3. FITUR SEARCH & FILTER KATEGORI
         function filterProducts() {
