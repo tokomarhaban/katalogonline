@@ -123,46 +123,50 @@
             }
         }
 
-        // 2. RENDER SEMUA PRODUK
-        function renderProducts(items) {
-            const container = document.getElementById("productList");
-            if (!container) return;
-            container.innerHTML = "";
+       // 2. RENDER SEMUA PRODUK DENGAN MANAJEMEN HTML SAFE
+function renderProducts(items) {
+    const container = document.getElementById("productList");
+    if (!container) return;
 
-            if (!items || items.length === 0) {
-                container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Produk tidak ditemukan.</p>`;
-                return;
-            }
+    if (!items || items.length === 0) {
+        container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Produk tidak ditemukan.</p>`;
+        return;
+    }
 
-            items.forEach(p => {
-                const imgUrl = p.img || 'https://via.placeholder.com/150';
-                const priceFormatted = (p.price || 0).toLocaleString("id-ID");
+    // Menggunakan array join agar proses pembuatan HTML 2400+ barang sangat cepat & tidak macet
+    const htmlCards = items.map(p => {
+        const imgUrl = p.img || 'https://via.placeholder.com/150';
+        const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
+        const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
+        const productId = String(p.id || '').replace(/'/g, "\\'");
 
-                container.innerHTML += `
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
-                        <div>
-                            <img src="${imgUrl}" alt="${p.name}" class="w-full h-28 object-cover rounded-lg mb-2">
-                            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${p.name}</h3>
-                            <p class="text-green-600 font-bold text-xs mb-2">Rp ${priceFormatted}</p>
-                        </div>
-                        <button onclick="addToCart('${p.id}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-1.5 rounded-lg text-xs transition">
-                            + Tambah
-                        </button>
-                    </div>
-                `;
-            });
-        }
+        return `
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                <div>
+                    <img src="${imgUrl}" alt="${nameClean}" class="w-full h-28 object-cover rounded-lg mb-2" loading="lazy">
+                    <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
+                    <p class="text-green-600 font-bold text-xs mb-2">Rp ${priceFormatted}</p>
+                </div>
+                <button onclick="addToCart('${productId}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-1.5 rounded-lg text-xs transition">
+                    + Tambah
+                </button>
+            </div>
+        `;
+    }).join("");
 
-        // 3. FITUR SEARCH LANGSUNG
-        function filterProducts() {
-            const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
-            if (!query) {
-                renderProducts(products);
-                return;
-            }
-            const filtered = products.filter(p => (p.name || "").toLowerCase().includes(query));
-            renderProducts(filtered);
-        }
+    container.innerHTML = htmlCards;
+}
+
+// 3. FITUR SEARCH LANGSUNG
+function filterProducts() {
+    const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
+    if (!query) {
+        renderProducts(products);
+        return;
+    }
+    const filtered = products.filter(p => String(p.name || "").toLowerCase().includes(query));
+    renderProducts(filtered);
+}
 
         // 4. KERANJANG BELANJA
         function addToCart(productId) {
