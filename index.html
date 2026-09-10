@@ -11,18 +11,25 @@
 </head>
 <body class="bg-gray-100 text-gray-800 pb-24">
 
-    <!-- HEADER & SEARCH BAR -->
+    <!-- HEADER, SEARCH BAR & FILTER HURUF -->
     <header class="sticky top-0 z-30 bg-white shadow-md p-4">
-        <div class="max-w-md mx-auto">
-            <h1 class="text-xl font-bold text-green-600 mb-3 text-center">
+        <div class="max-w-md mx-auto space-y-3">
+            <h1 class="text-xl font-bold text-green-600 text-center">
                 <i class="fa-solid fa-store mr-2"></i>Katalog Toko
             </h1>
             
             <!-- Kolom Pencarian Utama -->
             <div class="relative">
                 <input type="text" id="searchInput" onkeyup="filterProducts()" placeholder="Cari nama barang (misal: Roma, Shampo, Minyak)..." 
-                    class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm text-sm">
-                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400"></i>
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm text-sm">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400"></i>
+            </div>
+
+            <!-- Bilah Filter Huruf (A-Z & 0-9) -->
+            <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar" id="letterFilterContainer">
+                <button onclick="selectLetter('semua')" class="letter-btn bg-green-600 text-white px-3 py-1 rounded-full font-bold whitespace-nowrap">Semua</button>
+                <button onclick="selectLetter('0-9')" class="letter-btn bg-gray-200 text-gray-700 px-2.5 py-1 rounded-full font-semibold whitespace-nowrap">0-9</button>
+                <!-- A-Z akan dibuat otomatis via JavaScript di bawah -->
             </div>
         </div>
     </header>
@@ -79,15 +86,49 @@
         </div>
     </div>
 
-   <!-- JAVASCRIPT LOGIC -->
+    <!-- JAVASCRIPT LOGIC -->
     <script>
         const N8N_GET_PRODUCTS_URL = "https://n8nnew.tokomarhaban.my.id/webhook/get-products";
         const N8N_WEBHOOK_URL = "https://n8nnew.tokomarhaban.my.id/webhook/pesanan-baru";
 
         let products = [];
         let cart = [];
+        let selectedLetter = "semua";
 
-        // 1. FETCH PRODUK DARI N8N
+        // 1. GENERATE TOMBOL HURUF A-Z DI BARIS ATAS
+        function generateLetterButtons() {
+            const container = document.getElementById("letterFilterContainer");
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+            
+            alphabet.forEach(letter => {
+                const btn = document.createElement("button");
+                btn.innerText = letter;
+                btn.onclick = (e) => selectLetter(letter, e);
+                btn.className = "letter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-full font-semibold whitespace-nowrap text-xs transition";
+                container.appendChild(btn);
+            });
+        }
+
+        // 2. LOGIKA PILIH HURUF
+        function selectLetter(letter, eventObj) {
+            selectedLetter = letter;
+            
+            // Ubah gaya tombol aktif
+            document.querySelectorAll(".letter-btn").forEach(btn => {
+                btn.classList.replace("bg-green-600", "bg-gray-200");
+                btn.classList.replace("text-white", "text-gray-700");
+            });
+
+            const targetBtn = eventObj ? eventObj.target : event.target || document.querySelector('.letter-btn');
+            if (targetBtn) {
+                targetBtn.classList.replace("bg-gray-200", "bg-green-600");
+                targetBtn.classList.replace("text-gray-700", "text-white");
+            }
+
+            filterProducts();
+        }
+
+        // 3. FETCH PRODUK DARI N8N & URUTKAN A-Z
         async function fetchProductsFromSheets() {
             const container = document.getElementById("productList");
             if (!container) return;
@@ -95,10 +136,8 @@
             container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat katalog produk...</p>`;
 
             try {
-                console.log("Memulai request ke n8n...");
                 const response = await fetch(N8N_GET_PRODUCTS_URL);
                 const data = await response.json();
-                console.log("Data n8n berhasil diterima:", data);
 
                 let productList = [];
                 if (Array.isArray(data) && data[0] && data[0].products) {
@@ -109,9 +148,14 @@
                     productList = data;
                 }
 
-                console.log("Total produk siap tampil:", productList.length);
-
                 if (productList && productList.length > 0) {
+                    // PENGURUTAN ALFABETIS (0-9 -> A-Z)
+                    productList.sort((a, b) => {
+                        const nameA = (a.name || "").trim().toUpperCase();
+                        const nameB = (b.name || "").trim().toUpperCase();
+                        return nameA.localeCompare(nameB, 'id', { numeric: true });
+                    });
+
                     products = productList;
                     renderProducts(products);
                 } else {
@@ -123,51 +167,64 @@
             }
         }
 
-       // 2. RENDER SEMUA PRODUK DENGAN MANAJEMEN HTML SAFE
-function renderProducts(items) {
-    const container = document.getElementById("productList");
-    if (!container) return;
+        // 4. RENDER SEMUA PRODUK
+        function renderProducts(items) {
+            const container = document.getElementById("productList");
+            if (!container) return;
 
-    if (!items || items.length === 0) {
-        container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Produk tidak ditemukan.</p>`;
-        return;
-    }
+            if (!items || items.length === 0) {
+                container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Produk tidak ditemukan.</p>`;
+                return;
+            }
 
-    // Menggunakan array join agar proses pembuatan HTML 2400+ barang sangat cepat & tidak macet
-    const htmlCards = items.map(p => {
-        const imgUrl = p.img || 'https://via.placeholder.com/150';
-        const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
-        const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
-        const productId = String(p.id || '').replace(/'/g, "\\'");
+            const htmlCards = items.map(p => {
+                const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
+                const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
+                const productId = String(p.id || '').replace(/'/g, "\\'");
 
-        return `
-    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
-        <div>
-            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
-            <p class="text-green-600 font-bold text-xs mb-3">Rp ${priceFormatted}</p>
-        </div>
-        <button onclick="addToCart('${productId}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-1.5 rounded-lg text-xs transition">
-            + Tambah
-        </button>
-    </div>
-`;
-    }).join("");
+                return `
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
+                            <p class="text-green-600 font-bold text-xs mb-3">Rp ${priceFormatted}</p>
+                        </div>
+                        <button onclick="addToCart('${productId}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-1.5 rounded-lg text-xs transition">
+                            + Tambah
+                        </button>
+                    </div>
+                `;
+            }).join("");
 
-    container.innerHTML = htmlCards;
-}
+            container.innerHTML = htmlCards;
+        }
 
-// 3. FITUR SEARCH LANGSUNG
-function filterProducts() {
-    const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
-    if (!query) {
-        renderProducts(products);
-        return;
-    }
-    const filtered = products.filter(p => String(p.name || "").toLowerCase().includes(query));
-    renderProducts(filtered);
-}
+        // 5. FITUR SEARCH & FILTER HURUF TERPADU
+        function filterProducts() {
+            const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
 
-        // 4. KERANJANG BELANJA
+            const filtered = products.filter(p => {
+                const nameClean = (p.name || "").trim();
+                const nameLower = nameClean.toLowerCase();
+                const firstChar = nameClean.charAt(0).toUpperCase();
+
+                // Check Pencarian Teks
+                const matchQuery = !query || nameLower.includes(query);
+
+                // Check Filter Huruf
+                let matchLetter = true;
+                if (selectedLetter === "0-9") {
+                    matchLetter = /^[0-9]/.test(firstChar);
+                } else if (selectedLetter !== "semua") {
+                    matchLetter = firstChar === selectedLetter;
+                }
+
+                return matchQuery && matchLetter;
+            });
+
+            renderProducts(filtered);
+        }
+
+        // 6. KERANJANG BELANJA
         function addToCart(productId) {
             const item = products.find(p => String(p.id) === String(productId));
             if (!item) return;
@@ -208,7 +265,7 @@ function filterProducts() {
             }
         }
 
-        // 5. MODAL CHECKOUT
+        // 7. MODAL CHECKOUT
         function openCheckoutModal() {
             renderModalItems();
             document.getElementById("checkoutModal").classList.remove("hidden");
@@ -240,7 +297,7 @@ function filterProducts() {
             });
         }
 
-        // 6. KIRIM PESANAN KE N8N
+        // 8. KIRIM PESANAN KE N8N
         async function submitOrderToN8n() {
             const buyerName = document.getElementById("buyerName").value.trim();
             const buyerNote = document.getElementById("buyerNote").value.trim();
@@ -286,8 +343,9 @@ function filterProducts() {
             }
         }
 
-        // PEMANGGILAN UTAMA SAAT SCRIPT SELESAI DIMUAT
+        // JALANKAN PROGRAM
         document.addEventListener("DOMContentLoaded", function() {
+            generateLetterButtons();
             fetchProductsFromSheets();
         });
     </script>
