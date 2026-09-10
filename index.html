@@ -134,22 +134,26 @@ async function fetchProductsFromSheets() {
     }
 }
 
-// RENDER DAFTAR PRODUK
+// 3. RENDER DAFTAR PRODUK (DENGAN PENANGANAN KATEGORI SAFE)
 function renderProducts(items) {
     const container = document.getElementById("productList");
     if (!container) return;
     container.innerHTML = "";
 
+    // Jika activeCategory 'semua', tampilkan SEMUA tanpa filter p.category
     const filtered = items.filter(p => {
-        const matchesCategory = activeCategory === "semua" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
-        return matchesCategory;
+        if (!activeCategory || activeCategory.toLowerCase() === "semua") {
+            return true;
+        }
+        return p.category && p.category.toLowerCase() === activeCategory.toLowerCase();
     });
 
     if (filtered.length === 0) {
-        container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Tidak ada produk yang cocok.</p>`;
+        container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Tidak ada produk yang cocok dengan kategori ini.</p>`;
         return;
     }
 
+    // Render kartu produk
     filtered.forEach(p => {
         const imgUrl = p.img || 'https://via.placeholder.com/150';
         const priceFormatted = (p.price || 0).toLocaleString("id-ID");
@@ -167,6 +171,18 @@ function renderProducts(items) {
             </div>
         `;
     });
+}
+
+// 4. FITUR SEARCH
+function filterProducts() {
+    const query = (document.getElementById("searchInput")?.value || "").toLowerCase();
+    const filtered = products.filter(p => {
+        const matchName = (p.name || "").toLowerCase().includes(query);
+        const matchCat = (!activeCategory || activeCategory.toLowerCase() === "semua") || 
+                         (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
+        return matchName && matchCat;
+    });
+    renderProducts(filtered);
 }
 
 // EKSEKUSI LANGSUNG TANPA TUNGGU WINDOW.ONLOAD
