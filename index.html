@@ -79,7 +79,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+   <!-- JAVASCRIPT LOGIC -->
     <script>
         const N8N_GET_PRODUCTS_URL = "https://n8nnew.tokomarhaban.my.id/webhook/get-products";
         const N8N_WEBHOOK_URL = "https://n8nnew.tokomarhaban.my.id/webhook/pesanan-baru";
@@ -95,8 +95,10 @@
             container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat katalog produk...</p>`;
 
             try {
+                console.log("Memulai request ke n8n...");
                 const response = await fetch(N8N_GET_PRODUCTS_URL);
                 const data = await response.json();
+                console.log("Data n8n berhasil diterima:", data);
 
                 let productList = [];
                 if (Array.isArray(data) && data[0] && data[0].products) {
@@ -106,6 +108,8 @@
                 } else if (Array.isArray(data)) {
                     productList = data;
                 }
+
+                console.log("Total produk siap tampil:", productList.length);
 
                 if (productList && productList.length > 0) {
                     products = productList;
@@ -119,7 +123,7 @@
             }
         }
 
-        // 2. RENDER SEMUA PRODUK TANPA FILTER KATEGORI
+        // 2. RENDER SEMUA PRODUK
         function renderProducts(items) {
             const container = document.getElementById("productList");
             if (!container) return;
@@ -279,8 +283,10 @@
             }
         }
 
-        // JALANKAN SAAT HALAMAN DIBUKA
-        fetchProductsFromSheets();
+        // PEMANGGILAN UTAMA SAAT SCRIPT SELESAI DIMUAT
+        document.addEventListener("DOMContentLoaded", function() {
+            fetchProductsFromSheets();
+        });
     </script>
 </body>
 </html>
