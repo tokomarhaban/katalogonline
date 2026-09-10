@@ -3,35 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Katalog Toko Marhaban</title>
+    <title>Toko Marhaban - Katalog Online</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+    <style>
+        /* Sembunyikan scrollbar bawaan pada filter huruf tapi tetap bisa di-scroll di HP */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 text-gray-800 pb-24">
 
-    <!-- HEADER, SEARCH BAR & FILTER HURUF -->
-    <header class="sticky top-0 z-30 bg-white shadow-md p-4">
-        <div class="flex justify-center items-center gap-2 mb-1">
-    <!-- Panggil nama file gambar lokal -->
-    <img src="logo.png" alt="Logo Toko" class="h-10 w-auto object-contain">
-    <h1 class="text-xl font-bold text-green-600">Toko Marhaban</h1>
-</div>
+    <!-- HEADER, LOGO, SEARCH BAR & FILTER HURUF -->
+    <header class="sticky top-0 z-30 bg-white shadow-md py-3 px-4">
+        <div class="max-w-2xl mx-auto flex flex-col items-center gap-3">
             
-            <!-- Kolom Pencarian Utama -->
-            <div class="relative">
+            <!-- LOGO & NAMA TOKO -->
+            <div class="flex items-center justify-center gap-2">
+                <img src="logo.png" alt="Toko Marhaban" class="h-9 w-auto object-contain" onerror="this.style.display='none'">
+                <h1 class="text-xl font-bold text-green-600 tracking-tight">Toko Marhaban</h1>
+            </div>
+            
+            <!-- KOLOM PENCARIAN UTAMA -->
+            <div class="relative w-full">
                 <input type="text" id="searchInput" onkeyup="filterProducts()" placeholder="Cari nama barang (misal: Roma, Shampo, Minyak)..." 
                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm text-sm">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400"></i>
             </div>
 
-            <!-- Bilah Filter Huruf (A-Z & 0-9) -->
-            <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar" id="letterFilterContainer">
-                <button onclick="selectLetter('semua')" class="letter-btn bg-green-600 text-white px-3 py-1 rounded-full font-bold whitespace-nowrap">Semua</button>
-                <button onclick="selectLetter('0-9')" class="letter-btn bg-gray-200 text-gray-700 px-2.5 py-1 rounded-full font-semibold whitespace-nowrap">0-9</button>
-                <!-- A-Z akan dibuat otomatis via JavaScript di bawah -->
+            <!-- BILAH FILTER HURUF (A-Z & 0-9) -->
+            <!-- Note: sm:justify-center membuat tombol di PC Rata Tengah presisi -->
+            <div class="w-full flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar" id="letterFilterContainer">
+                <button onclick="selectLetter('semua', event)" class="letter-btn bg-green-600 text-white px-3 py-1 rounded-full font-bold whitespace-nowrap shadow-sm">Semua</button>
+                <button onclick="selectLetter('0-9', event)" class="letter-btn bg-gray-200 text-gray-700 px-2.5 py-1 rounded-full font-semibold whitespace-nowrap hover:bg-gray-300">0-9</button>
+                <!-- Tombol A-Z di-generate otomatis via JS -->
             </div>
+
         </div>
     </header>
 
@@ -105,7 +119,7 @@
                 const btn = document.createElement("button");
                 btn.innerText = letter;
                 btn.onclick = (e) => selectLetter(letter, e);
-                btn.className = "letter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-full font-semibold whitespace-nowrap text-xs transition";
+                btn.className = "letter-btn bg-gray-200 text-gray-700 px-2.5 py-1 rounded-full font-semibold whitespace-nowrap text-xs transition hover:bg-gray-300";
                 container.appendChild(btn);
             });
         }
@@ -120,7 +134,7 @@
                 btn.classList.replace("text-white", "text-gray-700");
             });
 
-            const targetBtn = eventObj ? eventObj.target : event.target || document.querySelector('.letter-btn');
+            const targetBtn = eventObj ? eventObj.target : document.querySelector('.letter-btn');
             if (targetBtn) {
                 targetBtn.classList.replace("bg-gray-200", "bg-green-600");
                 targetBtn.classList.replace("text-gray-700", "text-white");
