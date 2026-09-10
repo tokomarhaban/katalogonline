@@ -88,92 +88,93 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        // 1. DATA PRODUK DUMMY (Nanti bisa diganti dengan fetch dari Google Sheets / n8n API)
-        // GANTI DENGAN URL WEBHOOK GET PRODUCTS N8N MILIKMU
-const N8N_GET_PRODUCTS_URL = "https://n8nnew.tokomarhaban.my.id/webhook/get-products";
-const N8N_WEBHOOK_URL = "https://n8nnew.tokomarhaban.my.id/webhook/pesanan-baru";
+        // 1. CONFIG & DEKLARASI VARIABEL
+        const N8N_GET_PRODUCTS_URL = "https://n8nnew.tokomarhaban.my.id/webhook/get-products";
+        const N8N_WEBHOOK_URL = "https://n8nnew.tokomarhaban.my.id/webhook/pesanan-baru";
 
-let products = []; // Kosongkan array awal, nanti diisi via API Google Sheets
-let cart = [];
-let activeCategory = "semua";
-
-// Render Pertama Kali dengan Mengambil Data dari Google Sheets via n8n
-window.onload = async () => {
-    await fetchProductsFromSheets();
-};
-
-// FUNGSI FETCH PRODUK DARI N8N
-async function fetchProductsFromSheets() {
-    const container = document.getElementById("productList");
-    container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat katalog produk...</p>`;
-
-    try {
-        const response = await fetch(N8N_GET_PRODUCTS_URL);
-        const data = await response.json();
-
-        // Ambil array dari data.products
-        const productList = data.products || (Array.isArray(data) ? data : []);
-
-        if (productList.length > 0) {
-            products = productList;
-            renderProducts(products);
-        } else {
-            container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Belum ada produk yang tersedia saat ini.</p>`;
-        }
-    } catch (error) {
-        console.error("Gagal mengambil data produk:", error);
-        container.innerHTML = `<p class="col-span-2 text-center text-red-500 py-8">Gagal memuat katalog. Pastikan workflow n8n aktif.</p>`;
-    }
-}
-
-        // GANTI DENGAN URL WEBHOOK N8N CLOUDFLARE MILIKMU
-          let cart = [];
+        let products = [];
+        let cart = [];
         let activeCategory = "semua";
 
-        // Render Pertama Kali
-        window.onload = () => {
-            renderProducts(products);
+        // Render Pertama Kali dengan Mengambil Data dari Google Sheets via n8n
+        window.onload = async () => {
+            await fetchProductsFromSheets();
         };
 
-        // 2. RENDER DAFTAR PRODUK
+        // 2. FUNGSI FETCH PRODUK DARI N8N
+        async function fetchProductsFromSheets() {
+            const container = document.getElementById("productList");
+            if (!container) return;
+
+            container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat katalog produk...</p>`;
+
+            try {
+                const response = await fetch(N8N_GET_PRODUCTS_URL);
+                const data = await response.json();
+
+                // Ambil array dari data.products
+                let productList = [];
+                if (data && data.products) {
+                    productList = data.products;
+                } else if (Array.isArray(data) && data[0] && data[0].products) {
+                    productList = data[0].products;
+                } else if (Array.isArray(data)) {
+                    productList = data;
+                }
+
+                if (productList.length > 0) {
+                    products = productList;
+                    renderProducts(products);
+                } else {
+                    container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Belum ada produk yang tersedia saat ini.</p>`;
+                }
+            } catch (error) {
+                console.error("Gagal mengambil data produk:", error);
+                container.innerHTML = `<p class="col-span-2 text-center text-red-500 py-8">Gagal memuat katalog. Pastikan workflow n8n aktif.</p>`;
+            }
+        }
+
+        // 3. RENDER DAFTAR PRODUK
         function renderProducts(items) {
-    const container = document.getElementById("productList");
-    container.innerHTML = "";
+            const container = document.getElementById("productList");
+            if (!container) return;
+            container.innerHTML = "";
 
-    // Filter produk berdasarkan kategori aktif atau pencarian
-    const filtered = items.filter(p => {
-        const matchesCategory = activeCategory === "semua" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
-        return matchesCategory;
-    });
+            const filtered = items.filter(p => {
+                const matchesCategory = activeCategory === "semua" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
+                return matchesCategory;
+            });
 
-    if (filtered.length === 0) {
-        container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Tidak ada produk yang cocok.</p>`;
-        return;
-    }
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Tidak ada produk yang cocok.</p>`;
+                return;
+            }
 
-    // Render HTML kartu produk
-    filtered.forEach(p => {
-        container.innerHTML += `
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
-                <div>
-                    <img src="${p.img}" alt="${p.name}" class="w-full h-32 object-cover rounded-lg mb-3">
-                    <h3 class="font-semibold text-gray-800 text-sm line-clamp-2 mb-1">${p.name}</h3>
-                    <p class="text-green-600 font-bold text-sm mb-2">Rp ${p.price.toLocaleString("id-ID")}</p>
-                </div>
-                <button onclick="addToCart('${p.id}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-2 rounded-lg text-xs transition">
-                    + Tambah
-                </button>
-            </div>
-        `;
-    });
-}
+            filtered.forEach(p => {
+                const imgUrl = p.img || 'https://via.placeholder.com/150';
+                const priceFormatted = (p.price || 0).toLocaleString("id-ID");
 
-        // 3. FITUR SEARCH & FILTER KATEGORI
+                container.innerHTML += `
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                        <div>
+                            <img src="${imgUrl}" alt="${p.name}" class="w-full h-28 object-cover rounded-lg mb-2">
+                            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${p.name}</h3>
+                            <p class="text-green-600 font-bold text-xs mb-2">Rp ${priceFormatted}</p>
+                        </div>
+                        <button onclick="addToCart('${p.id}')" class="w-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white font-medium py-1.5 rounded-lg text-xs transition">
+                            + Tambah
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // 4. FITUR SEARCH & FILTER KATEGORI
         function filterProducts() {
             const query = document.getElementById("searchInput").value.toLowerCase();
             const filtered = products.filter(p => {
-                const matchName = p.name.toLowerCase().includes(query);
-                const matchCat = activeCategory === "semua" || p.category === activeCategory;
+                const matchName = (p.name || "").toLowerCase().includes(query);
+                const matchCat = activeCategory === "semua" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
                 return matchName && matchCat;
             });
             renderProducts(filtered);
@@ -185,15 +186,19 @@ async function fetchProductsFromSheets() {
                 btn.classList.replace("bg-green-600", "bg-gray-200");
                 btn.classList.replace("text-white", "text-gray-700");
             });
-            event.target.classList.replace("bg-gray-200", "bg-green-600");
-            event.target.classList.replace("text-gray-700", "text-white");
+            if (event && event.target) {
+                event.target.classList.replace("bg-gray-200", "bg-green-600");
+                event.target.classList.replace("text-gray-700", "text-white");
+            }
             filterProducts();
         }
 
-        // 4. LOGIKA KERANJANG BELANJA
+        // 5. LOGIKA KERANJANG BELANJA
         function addToCart(productId) {
-            const item = products.find(p => p.id === productId);
-            const exist = cart.find(c => c.id === productId);
+            const item = products.find(p => String(p.id) === String(productId));
+            if (!item) return;
+
+            const exist = cart.find(c => String(c.id) === String(productId));
 
             if (exist) {
                 exist.qty += 1;
@@ -204,7 +209,7 @@ async function fetchProductsFromSheets() {
         }
 
         function updateQty(productId, change) {
-            const index = cart.findIndex(c => c.id === productId);
+            const index = cart.findIndex(c => String(c.id) === String(productId));
             if (index !== -1) {
                 cart[index].qty += change;
                 if (cart[index].qty <= 0) {
@@ -230,7 +235,7 @@ async function fetchProductsFromSheets() {
             }
         }
 
-        // 5. MODAL CHECKOUT
+        // 6. MODAL CHECKOUT
         function openCheckoutModal() {
             renderModalItems();
             document.getElementById("checkoutModal").classList.remove("hidden");
@@ -245,23 +250,24 @@ async function fetchProductsFromSheets() {
             container.innerHTML = "";
 
             cart.forEach(item => {
+                const itemTotal = (item.price * item.qty).toLocaleString('id-ID');
                 container.innerHTML += `
                     <div class="py-2 flex justify-between items-center">
                         <div>
                             <p class="font-medium text-sm">${item.name}</p>
-                            <p class="text-xs text-gray-500">Rp ${item.price.toLocaleString('id-ID')} x ${item.qty}</p>
+                            <p class="text-xs text-gray-500">Rp ${item.price.toLocaleString('id-ID')} x ${item.qty} = Rp ${itemTotal}</p>
                         </div>
                         <div class="flex items-center gap-2 border rounded-lg px-2 py-1">
-                            <button onclick="updateQty(${item.id}, -1)" class="text-gray-500 font-bold px-1">-</button>
+                            <button onclick="updateQty('${item.id}', -1)" class="text-gray-500 font-bold px-1">-</button>
                             <span class="text-sm font-semibold">${item.qty}</span>
-                            <button onclick="updateQty(${item.id}, 1)" class="text-green-600 font-bold px-1">+</button>
+                            <button onclick="updateQty('${item.id}', 1)" class="text-green-600 font-bold px-1">+</button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        // 6. KIRIM DATA KE WEBHOOK N8N VIA FETCH API
+        // 7. KIRIM DATA KE WEBHOOK N8N VIA FETCH API
         async function submitOrderToN8n() {
             const buyerName = document.getElementById("buyerName").value.trim();
             const buyerNote = document.getElementById("buyerNote").value.trim();
@@ -283,7 +289,6 @@ async function fetchProductsFromSheets() {
             };
 
             try {
-                // Mengirim payload JSON ke n8n Webhook
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -291,17 +296,14 @@ async function fetchProductsFromSheets() {
                 });
 
                 const data = await response.json();
+                let targetUrl = data.whatsapp_url || (data[0] && data[0].whatsapp_url);
 
-// Mengambil URL dari n8n (bisa berupa object langsung atau dalam array)
-let targetUrl = data.whatsapp_url || (data[0] && data[0].whatsapp_url);
-
-if (targetUrl) {
-    // Bersihkan jika ada karakter '=' atau spasi yang tidak sengaja terbawa
-    targetUrl = targetUrl.replace(/^=/, '').trim();
-    window.location.href = targetUrl; // Langsung buka WhatsApp!
-} else {
-    alert("Gagal mendapatkan link WhatsApp dari server. Cek kembali output di n8n.");
-}
+                if (targetUrl) {
+                    targetUrl = targetUrl.replace(/^=/, '').trim();
+                    window.location.href = targetUrl;
+                } else {
+                    alert("Gagal mendapatkan link WhatsApp dari server. Cek kembali output di n8n.");
+                }
             } catch (error) {
                 console.error("Error:", error);
                 alert("Gagal terhubung ke server n8n. Pastikan URL Webhook sudah benar.");
