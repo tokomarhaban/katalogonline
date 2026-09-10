@@ -108,7 +108,7 @@ async function fetchProductsFromSheets() {
     container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat katalog produk...</p>`;
 
     try {
-        const response = await fetch(https://n8nnew.tokomarhaban.my.id/webhook/get-products);
+        const response = await fetch(N8N_GET_PRODUCTS_URL);
         const data = await response.json();
 
         // Ambil array dari data.products
