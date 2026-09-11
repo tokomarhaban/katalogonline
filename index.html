@@ -203,14 +203,14 @@
             const htmlCards = items.map(p => {
                 const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
                 const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
-                const productId = String(p.id || '').replace(/'/g, "\\'");
+                const productId = String(p.id).replace(/'/g, "\\'");
                 
-                // Pembacaan data stok dari Sheet (Mendukung p['Stok Minimum'], p.stok_minimal, maupun p.stok)
-const rawStok = p.Stok !== undefined ? p.Stok : p.stok;
-const rawStokMin = p['Stok Minimum'] !== undefined ? p['Stok Minimum'] : (p.stok_minimal !== undefined ? p.stok_minimal : p.stok_minimum);
+                const rawStok = p.Stok !== undefined ? p.Stok : p.stok;
+                const rawStokMin = p['Stok Minimum'] !== undefined ? p['Stok Minimum'] : (p.stok_minimal !== undefined ? p.stok_minimal : p.stok_minimum);
 
-const stokVal = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
-const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMin) : 5;
+                const stokVal = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+                const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMin) : 5;
+
                 let stockBadge = '';
                 let buttonHtml = '';
 
