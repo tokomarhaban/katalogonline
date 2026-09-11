@@ -257,29 +257,52 @@ const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMi
         }
 
         function addToCart(productId) {
-            const item = products.find(p => String(p.id) === String(productId));
-            if (!item) return;
+    const item = products.find(p => String(p.id) === String(productId));
+    if (!item) return;
 
-            const exist = cart.find(c => String(c.id) === String(productId));
-            if (exist) {
-                exist.qty += 1;
-            } else {
-                cart.push({ ...item, qty: 1 });
-            }
-            updateCartUI();
+    // Ambil nilai stok produk
+    const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
+    const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+
+    const exist = cart.find(c => String(c.id) === String(productId));
+    if (exist) {
+        if (exist.qty < maxStok) {
+            exist.qty += 1;
+        } else {
+            alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
+            return;
         }
+    } else {
+        if (maxStok > 0) {
+            cart.push({ ...item, qty: 1 });
+        } else {
+            alert("Stok barang ini sudah habis.");
+            return;
+        }
+    }
+    updateCartUI();
+}
 
         function updateQty(productId, change) {
-            const index = cart.findIndex(c => String(c.id) === String(productId));
-            if (index !== -1) {
-                cart[index].qty += change;
-                if (cart[index].qty <= 0) {
-                    cart.splice(index, 1);
-                }
-            }
-            updateCartUI();
-            renderModalItems();
+    const index = cart.findIndex(c => String(c.id) === String(productId));
+    if (index !== -1) {
+        const item = cart[index];
+        const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
+        const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+
+        if (change > 0 && item.qty >= maxStok) {
+            alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
+            return;
         }
+
+        item.qty += change;
+        if (item.qty <= 0) {
+            cart.splice(index, 1);
+        }
+    }
+    updateCartUI();
+    renderModalItems();
+}
 
         function updateCartUI() {
             const cartBar = document.getElementById("cartBar");
@@ -306,52 +329,67 @@ const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMi
         }
 
         function renderModalItems() {
-            const container = document.getElementById("modalCartItems");
-            if (!container) return;
-            container.innerHTML = "";
+    const container = document.getElementById("modalCartItems");
+    if (!container) return;
+    container.innerHTML = "";
 
-            cart.forEach(item => {
-                const itemTotal = (item.price * item.qty).toLocaleString('id-ID');
-                const productId = String(item.id || '').replace(/'/g, "\\'");
+    cart.forEach(item => {
+        const itemTotal = (item.price * item.qty).toLocaleString('id-ID');
+        const productId = String(item.id || '').replace(/'/g, "\\'");
 
-                container.innerHTML += `
-                    <div class="py-2.5 flex justify-between items-center gap-2">
-                        <div class="flex-1 pr-2">
-                            <p class="font-semibold text-sm text-gray-800 leading-snug">${item.name}</p>
-                            <p class="text-xs text-gray-500 mt-0.5">
-                                Rp ${item.price.toLocaleString('id-ID')} x ${item.qty} = <span class="text-[#D61627] font-bold">Rp ${itemTotal}</span>
-                            </p>
-                        </div>
-                        
-                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50 shadow-sm shrink-0">
-                            <button onclick="updateQty('${productId}', -1)" class="w-8 h-8 text-gray-600 font-bold hover:bg-gray-200 transition flex items-center justify-center">-</button>
-                            
-                            <input type="number" min="0" value="${item.qty}" 
-                                onchange="setCartQty('${productId}', this.value)"
-                                onkeyup="setCartQty('${productId}', this.value)"
-                                class="w-12 h-8 text-center text-sm font-bold text-gray-800 bg-white border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#006AB4] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                            
-                            <button onclick="updateQty('${productId}', 1)" class="w-8 h-8 text-[#006AB4] font-bold hover:bg-blue-50 transition flex items-center justify-center">+</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
+        // 1. Ambil batas stok produk agar input tidak bisa melebihi stok
+        const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
+        const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+
+        container.innerHTML += `
+            <div class="py-2.5 flex justify-between items-center gap-2">
+                <div class="flex-1 pr-2">
+                    <p class="font-semibold text-sm text-gray-800 leading-snug">${item.name}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                        Rp ${item.price.toLocaleString('id-ID')} x ${item.qty} = <span class="text-[#D61627] font-bold">Rp ${itemTotal}</span>
+                    </p>
+                </div>
+                
+                <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50 shadow-sm shrink-0">
+                    <button onclick="updateQty('${productId}', -1)" class="w-8 h-8 text-gray-600 font-bold hover:bg-gray-200 transition flex items-center justify-center">-</button>
+                    
+                    <!-- 2. Tambahkan atribut max="${maxStok}" di bawah ini -->
+                    <input type="number" min="0" max="${maxStok}" value="${item.qty}" 
+                        onchange="setCartQty('${productId}', this.value)"
+                        onkeyup="setCartQty('${productId}', this.value)"
+                        class="w-12 h-8 text-center text-sm font-bold text-gray-800 bg-white border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#006AB4] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    
+                    <button onclick="updateQty('${productId}', 1)" class="w-8 h-8 text-[#006AB4] font-bold hover:bg-blue-50 transition flex items-center justify-center">+</button>
+                </div>
+            </div>
+        `;
+    });
+}
 
         function setCartQty(productId, newQty) {
-            const val = parseInt(newQty, 10);
-            const index = cart.findIndex(c => String(c.id) === String(productId));
-            
-            if (index !== -1) {
-                if (isNaN(val) || val <= 0) {
-                    cart.splice(index, 1);
-                } else {
-                    cart[index].qty = val;
-                }
-            }
-            
-            updateCartUI();
+    let val = parseInt(newQty, 10);
+    const index = cart.findIndex(c => String(c.id) === String(productId));
+    
+    if (index !== -1) {
+        const item = cart[index];
+        const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
+        const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+
+        if (val > maxStok) {
+            alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
+            val = maxStok;
         }
+
+        if (isNaN(val) || val <= 0) {
+            cart.splice(index, 1);
+        } else {
+            cart[index].qty = val;
+        }
+    }
+    
+    updateCartUI();
+    renderModalItems();
+}
 
         async function submitOrderToN8n() {
             const buyerName = document.getElementById("buyerName").value.trim();
