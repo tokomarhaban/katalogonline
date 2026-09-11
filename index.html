@@ -166,6 +166,13 @@
                 }
 
                 if (productList && productList.length > 0) {
+                    // MEMBUAT ID UNIK UNTUK SETIAP ITEM AGAR VARIAN TIDAK BENTROK
+                    productList = productList.map((p, idx) => {
+                        const cleanName = (p.name || 'item').toLowerCase().replace(/[^a-z0-9]/g, '-');
+                        const uniqueId = p.id ? `${p.id}-${cleanName}` : `prod-${idx}-${cleanName}`;
+                        return { ...p, id: uniqueId };
+                    });
+
                     productList.sort((a, b) => {
                         const nameA = (a.name || "").trim().toUpperCase();
                         const nameB = (b.name || "").trim().toUpperCase();
