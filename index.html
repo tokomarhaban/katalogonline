@@ -205,11 +205,22 @@
                 const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
                 const productId = String(p.id).replace(/'/g, "\\'");
                 
+                // Pembacaan stok
                 const rawStok = p.Stok !== undefined ? p.Stok : p.stok;
                 const rawStokMin = p['Stok Minimum'] !== undefined ? p['Stok Minimum'] : (p.stok_minimal !== undefined ? p.stok_minimal : p.stok_minimum);
 
                 const stokVal = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
                 const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMin) : 5;
+
+                // LOGIKA SMART GAMBAR PRODUK
+                // Jika p.image / p.Gambar ada isinya dan diawali 'http', pakai gambar tersebut.
+                // Jika kosong, gunakan gambar default/placeholder yang rapi.
+                const imgField = p.Gambar || p.gambar || p.image || p.img || "";
+                const hasValidImg = imgField && typeof imgField === 'string' && imgField.trim().startsWith('http');
+                
+                const imgUrl = hasValidImg 
+                    ? imgField.trim() 
+                    : `https://placehold.co/300x200/006AB4/ffffff?text=${encodeURIComponent(p.name || 'Toko Marhaban')}`;
 
                 let stockBadge = '';
                 let buttonHtml = '';
@@ -228,6 +239,11 @@
                 return `
                     <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
                         <div>
+                            <!-- AREA FOTO PRODUK -->
+                            <div class="w-full h-28 bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100">
+                                <img src="${imgUrl}" alt="${nameClean}" class="w-full h-full object-contain p-1" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x200/006AB4/ffffff?text=Toko+Marhaban';">
+                            </div>
+                            
                             <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
                             <p class="text-[#D61627] font-bold text-xs mb-1">Rp ${priceFormatted}</p>
                             ${stockBadge}
