@@ -241,8 +241,7 @@
                 return `
                     <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
                         <div>
-                            <div class="w-full h-28 bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100 cursor-pointer group relative" 
-                                 onclick="openImageModal('${imgUrl}', '${nameClean}')">
+                            <div class="w-full aspect-square bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100 cursor-pointer group relative" onclick="openImageModal('${imgUrl}', '${nameClean}')">
                                 <img src="${imgUrl}" alt="${nameClean}" class="w-full h-full object-contain p-1 group-hover:scale-105 transition duration-200" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x200/006AB4/ffffff?text=Toko+Marhaban';">
                                 <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                                     <i class="fa-solid fa-magnifying-glass-plus text-gray-700 bg-white/80 p-1.5 rounded-full text-xs shadow-sm"></i>
