@@ -192,69 +192,70 @@
 
         // RENDER PRODUK DENGAN LOGIKA BADGE STOK & DISABLE BUTTON
         function renderProducts(items) {
-            const container = document.getElementById("productList");
-            if (!container) return;
+    const container = document.getElementById("productList");
+    if (!container) return;
 
-            if (!items || items.length === 0) {
-                container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Produk tidak ditemukan.</p>`;
-                return;
-            }
+    if (!items || items.length === 0) {
+        container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Produk tidak ditemukan.</p>`;
+        return;
+    }
 
-            const htmlCards = items.map(p => {
-                const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
-                const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
-                const productId = String(p.id).replace(/'/g, "\\'");
-                
-                // Pembacaan stok
-                const rawStok = p.Stok !== undefined ? p.Stok : p.stok;
-                const rawStokMin = p['Stok Minimum'] !== undefined ? p['Stok Minimum'] : (p.stok_minimal !== undefined ? p.stok_minimal : p.stok_minimum);
+    const htmlCards = items.map(p => {
+        const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
+        const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
+        const productId = String(p.id).replace(/'/g, "\\'");
+        
+        // Membaca link gambar dari n8n / Sheet
+        const imgField = p.img || p.Gambar || p.gambar || "";
+        const hasValidImg = typeof imgField === 'string' && imgField.trim().startsWith('http');
+        const imgUrl = hasValidImg 
+            ? imgField.trim() 
+            : `https://placehold.co/300x200/006AB4/ffffff?text=${encodeURIComponent(p.name || 'Toko Marhaban')}`;
 
-                const stokVal = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
-                const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMin) : 5;
+        // Pembacaan stok
+        const rawStok = p.Stok !== undefined ? p.Stok : p.stok;
+        const rawStokMin = p['Stok Minimum'] !== undefined ? p['Stok Minimum'] : (p.stok_minimal !== undefined ? p.stok_minimal : p.stok_minimum);
 
-                // LOGIKA SMART GAMBAR PRODUK
-                // Jika p.image / p.Gambar ada isinya dan diawali 'http', pakai gambar tersebut.
-                // Jika kosong, gunakan gambar default/placeholder yang rapi.
-                const imgField = p.Gambar || p.gambar || p.image || p.img || "";
-                const hasValidImg = imgField && typeof imgField === 'string' && imgField.trim().startsWith('http');
-                
-                const imgUrl = hasValidImg 
-                    ? imgField.trim() 
-                    : `https://placehold.co/300x200/006AB4/ffffff?text=${encodeURIComponent(p.name || 'Toko Marhaban')}`;
+        const stokVal = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+        const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMin) : 5;
 
-                let stockBadge = '';
-                let buttonHtml = '';
+        let stockBadge = '';
+        let buttonHtml = '';
 
-                if (stokVal <= 0) {
-                    stockBadge = `<span class="inline-block bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded mb-2">Stok Habis</span>`;
-                    buttonHtml = `<button disabled class="w-full bg-gray-200 text-gray-400 font-medium py-1.5 rounded-lg text-xs cursor-not-allowed">Habis</button>`;
-                } else if (stokVal <= stokMin) {
-                    stockBadge = `<span class="inline-block bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded mb-2">Sisa ${stokVal}</span>`;
-                    buttonHtml = `<button onclick="addToCart('${productId}')" class="w-full bg-blue-50 text-[#006AB4] hover:bg-[#006AB4] hover:text-white font-medium py-1.5 rounded-lg text-xs transition border border-blue-100">+ Tambah</button>`;
-                } else {
-                    stockBadge = `<span class="inline-block bg-emerald-50 text-emerald-600 text-[10px] font-medium px-2 py-0.5 rounded mb-2">Stok: ${stokVal}</span>`;
-                    buttonHtml = `<button onclick="addToCart('${productId}')" class="w-full bg-blue-50 text-[#006AB4] hover:bg-[#006AB4] hover:text-white font-medium py-1.5 rounded-lg text-xs transition border border-blue-100">+ Tambah</button>`;
-                }
-
-                return `
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
-                        <div>
-                            <!-- AREA FOTO PRODUK -->
-                            <div class="w-full h-28 bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100">
-                                <img src="${imgUrl}" alt="${nameClean}" class="w-full h-full object-contain p-1" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x200/006AB4/ffffff?text=Toko+Marhaban';">
-                            </div>
-                            
-                            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
-                            <p class="text-[#D61627] font-bold text-xs mb-1">Rp ${priceFormatted}</p>
-                            ${stockBadge}
-                        </div>
-                        ${buttonHtml}
-                    </div>
-                `;
-            }).join("");
-
-            container.innerHTML = htmlCards;
+        if (stokVal <= 0) {
+            stockBadge = `<span class="inline-block bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded mb-2">Stok Habis</span>`;
+            buttonHtml = `<button disabled class="w-full bg-gray-200 text-gray-400 font-medium py-1.5 rounded-lg text-xs cursor-not-allowed">Habis</button>`;
+        } else if (stokVal <= stokMin) {
+            stockBadge = `<span class="inline-block bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded mb-2">Sisa ${stokVal}</span>`;
+            buttonHtml = `<button onclick="addToCart('${productId}')" class="w-full bg-blue-50 text-[#006AB4] hover:bg-[#006AB4] hover:text-white font-medium py-1.5 rounded-lg text-xs transition border border-blue-100">+ Tambah</button>`;
+        } else {
+            stockBadge = `<span class="inline-block bg-emerald-50 text-emerald-600 text-[10px] font-medium px-2 py-0.5 rounded mb-2">Stok: ${stokVal}</span>`;
+            buttonHtml = `<button onclick="addToCart('${productId}')" class="w-full bg-blue-50 text-[#006AB4] hover:bg-[#006AB4] hover:text-white font-medium py-1.5 rounded-lg text-xs transition border border-blue-100">+ Tambah</button>`;
         }
+
+        return `
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
+                <div>
+                    <!-- AREA FOTO PRODUK (KLIK UNTUK FULLSCREEN) -->
+                    <div class="w-full h-28 bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100 cursor-pointer group relative" 
+                         onclick="openImageModal('${imgUrl}', '${nameClean}')">
+                        <img src="${imgUrl}" alt="${nameClean}" class="w-full h-full object-contain p-1 group-hover:scale-105 transition duration-200" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x200/006AB4/ffffff?text=Toko+Marhaban';">
+                        <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <i class="fa-solid fa-magnifying-glass-plus text-gray-700 bg-white/80 p-1.5 rounded-full text-xs shadow-sm"></i>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
+                    <p class="text-[#D61627] font-bold text-xs mb-1">Rp ${priceFormatted}</p>
+                    ${stockBadge}
+                </div>
+                ${buttonHtml}
+            </div>
+        `;
+    }).join("");
+
+    container.innerHTML = htmlCards;
+}
 
         function filterProducts() {
             const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
@@ -464,6 +465,40 @@
             generateLetterButtons();
             fetchProductsFromSheets();
         });
+        
+function openImageModal(imgUrl, caption) {
+            const modal = document.getElementById("imageModal");
+            const modalImg = document.getElementById("modalImageSrc");
+            const modalCap = document.getElementById("modalImageCaption");
+
+            if (!modal || !modalImg) return;
+
+            modalImg.src = imgUrl;
+            if (modalCap) modalCap.innerText = caption || "";
+
+            modal.classList.remove("hidden");
+            document.body.style.overflow = "hidden"; // Cegah scroll latar belakang
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById("imageModal");
+            if (modal) {
+                modal.classList.add("hidden");
+                document.body.style.overflow = "auto"; // Kembalikan scroll
+            }
+        }
+
+        <!-- MODAL FULLSCREEN GAMBAR (LIGHTBOX) -->
+    <div id="imageModal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm cursor-pointer" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 text-3xl font-bold z-50 p-2 focus:outline-none">
+            &times;
+        </button>
+        <div class="max-w-3xl max-h-[85vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
+            <img id="modalImageSrc" src="" alt="Detail Produk" class="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl transition-all duration-300">
+            <p id="modalImageCaption" class="text-white text-center font-semibold mt-3 text-sm sm:text-base px-2 bg-black/40 py-1 rounded-full border border-white/20"></p>
+        </div>
+    </div>
+        
     </script>
 </body>
 </html>
