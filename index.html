@@ -364,33 +364,47 @@
                 const itemTotal = (item.price * item.qty).toLocaleString('id-ID');
                 const productId = String(item.id || '').replace(/'/g, "\\'");
 
+                // Ambil link gambar produk (fallback jika tidak ada)
+                const imgField = item.img || item.Gambar || item.gambar || "";
+                const hasValidImg = typeof imgField === 'string' && imgField.trim().startsWith('http');
+                const imgUrl = hasValidImg 
+                    ? imgField.trim() 
+                    : `https://placehold.co/300x200/006AB4/ffffff?text=${encodeURIComponent(item.name || 'Toko Marhaban')}`;
+
+                // Ambil batas stok produk
                 const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
                 const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
 
                 container.innerHTML += `
-                    <div class="py-2.5 flex justify-between items-center gap-2">
-                        <div class="flex-1 pr-2">
-                            <p class="font-semibold text-sm text-gray-800 leading-snug">${item.name}</p>
-                            <p class="text-xs text-gray-500 mt-0.5">
+                    <div class="py-2.5 flex items-center justify-between gap-3">
+                        <!-- GAMBAR THUMBNAIL KECIL -->
+                        <div class="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden border border-gray-200 shrink-0 flex items-center justify-center p-0.5">
+                            <img src="${imgUrl}" alt="${item.name}" class="w-full h-full object-contain rounded" onerror="this.onerror=null; this.src='https://placehold.co/100/006AB4/ffffff?text=TM';">
+                        </div>
+
+                        <!-- INFO DETAIL PRODUK -->
+                        <div class="flex-1 min-w-0 pr-1">
+                            <p class="font-semibold text-xs text-gray-800 leading-snug truncate">${item.name}</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5">
                                 Rp ${item.price.toLocaleString('id-ID')} x ${item.qty} = <span class="text-[#D61627] font-bold">Rp ${itemTotal}</span>
                             </p>
                         </div>
                         
+                        <!-- TOMBOL JUMLAH PESANAN -->
                         <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50 shadow-sm shrink-0">
-                            <button onclick="updateQty('${productId}', -1)" class="w-8 h-8 text-gray-600 font-bold hover:bg-gray-200 transition flex items-center justify-center">-</button>
+                            <button onclick="updateQty('${productId}', -1)" class="w-7 h-7 text-gray-600 font-bold hover:bg-gray-200 transition flex items-center justify-center text-xs">-</button>
                             
                             <input type="number" min="0" max="${maxStok}" value="${item.qty}" 
                                 onchange="setCartQty('${productId}', this.value)"
                                 onkeyup="setCartQty('${productId}', this.value)"
-                                class="w-12 h-8 text-center text-sm font-bold text-gray-800 bg-white border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#006AB4] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                class="w-10 h-7 text-center text-xs font-bold text-gray-800 bg-white border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#006AB4] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                             
-                            <button onclick="updateQty('${productId}', 1)" class="w-8 h-8 text-[#006AB4] font-bold hover:bg-blue-50 transition flex items-center justify-center">+</button>
+                            <button onclick="updateQty('${productId}', 1)" class="w-7 h-7 text-[#006AB4] font-bold hover:bg-blue-50 transition flex items-center justify-center text-xs">+</button>
                         </div>
                     </div>
                 `;
             });
         }
-
         function setCartQty(productId, newQty) {
             let val = parseInt(newQty, 10);
             const index = cart.findIndex(c => String(c.id) === String(productId));
