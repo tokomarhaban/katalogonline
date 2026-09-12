@@ -107,6 +107,15 @@
         </div>
     </div>
 
+    <!-- MODAL FULLSCREEN GAMBAR (LIGHTBOX) -->
+    <div id="imageModal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm cursor-pointer" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 text-3xl font-bold z-50 p-2 focus:outline-none">&times;</button>
+        <div class="max-w-3xl max-h-[85vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
+            <img id="modalImageSrc" src="" alt="Detail Produk" class="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl transition-all duration-300">
+            <p id="modalImageCaption" class="text-white text-center font-semibold mt-3 text-sm sm:text-base px-2 bg-black/40 py-1 rounded-full border border-white/20"></p>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT LOGIC -->
     <script>
         const N8N_GET_PRODUCTS_URL = "https://n8nnew.tokomarhaban.my.id/webhook/get-products";
@@ -166,7 +175,6 @@
                 }
 
                 if (productList && productList.length > 0) {
-                    // MEMBUAT ID UNIK UNTUK SETIAP ITEM AGAR VARIAN TIDAK BENTROK
                     productList = productList.map((p, idx) => {
                         const cleanName = (p.name || 'item').toLowerCase().replace(/[^a-z0-9]/g, '-');
                         const uniqueId = p.id ? `${p.id}-${cleanName}` : `prod-${idx}-${cleanName}`;
@@ -190,72 +198,68 @@
             }
         }
 
-        // RENDER PRODUK DENGAN LOGIKA BADGE STOK & DISABLE BUTTON
         function renderProducts(items) {
-    const container = document.getElementById("productList");
-    if (!container) return;
+            const container = document.getElementById("productList");
+            if (!container) return;
 
-    if (!items || items.length === 0) {
-        container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Produk tidak ditemukan.</p>`;
-        return;
-    }
+            if (!items || items.length === 0) {
+                container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Produk tidak ditemukan.</p>`;
+                return;
+            }
 
-    const htmlCards = items.map(p => {
-        const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
-        const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
-        const productId = String(p.id).replace(/'/g, "\\'");
-        
-        // Membaca link gambar dari n8n / Sheet
-        const imgField = p.img || p.Gambar || p.gambar || "";
-        const hasValidImg = typeof imgField === 'string' && imgField.trim().startsWith('http');
-        const imgUrl = hasValidImg 
-            ? imgField.trim() 
-            : `https://placehold.co/300x200/006AB4/ffffff?text=${encodeURIComponent(p.name || 'Toko Marhaban')}`;
+            const htmlCards = items.map(p => {
+                const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
+                const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
+                const productId = String(p.id).replace(/'/g, "\\'");
+                
+                const imgField = p.img || p.Gambar || p.gambar || "";
+                const hasValidImg = typeof imgField === 'string' && imgField.trim().startsWith('http');
+                const imgUrl = hasValidImg 
+                    ? imgField.trim() 
+                    : `https://placehold.co/300x200/006AB4/ffffff?text=${encodeURIComponent(p.name || 'Toko Marhaban')}`;
 
-        // Pembacaan stok
-        const rawStok = p.Stok !== undefined ? p.Stok : p.stok;
-        const rawStokMin = p['Stok Minimum'] !== undefined ? p['Stok Minimum'] : (p.stok_minimal !== undefined ? p.stok_minimal : p.stok_minimum);
+                const rawStok = p.Stok !== undefined ? p.Stok : p.stok;
+                const rawStokMin = p['Stok Minimum'] !== undefined ? p['Stok Minimum'] : (p.stok_minimal !== undefined ? p.stok_minimal : p.stok_minimum);
 
-        const stokVal = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
-        const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMin) : 5;
+                const stokVal = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+                const stokMin = rawStokMin !== undefined && rawStokMin !== "" ? Number(rawStokMin) : 5;
 
-        let stockBadge = '';
-        let buttonHtml = '';
+                let stockBadge = '';
+                let buttonHtml = '';
 
-        if (stokVal <= 0) {
-            stockBadge = `<span class="inline-block bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded mb-2">Stok Habis</span>`;
-            buttonHtml = `<button disabled class="w-full bg-gray-200 text-gray-400 font-medium py-1.5 rounded-lg text-xs cursor-not-allowed">Habis</button>`;
-        } else if (stokVal <= stokMin) {
-            stockBadge = `<span class="inline-block bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded mb-2">Sisa ${stokVal}</span>`;
-            buttonHtml = `<button onclick="addToCart('${productId}')" class="w-full bg-blue-50 text-[#006AB4] hover:bg-[#006AB4] hover:text-white font-medium py-1.5 rounded-lg text-xs transition border border-blue-100">+ Tambah</button>`;
-        } else {
-            stockBadge = `<span class="inline-block bg-emerald-50 text-emerald-600 text-[10px] font-medium px-2 py-0.5 rounded mb-2">Stok: ${stokVal}</span>`;
-            buttonHtml = `<button onclick="addToCart('${productId}')" class="w-full bg-blue-50 text-[#006AB4] hover:bg-[#006AB4] hover:text-white font-medium py-1.5 rounded-lg text-xs transition border border-blue-100">+ Tambah</button>`;
-        }
+                if (stokVal <= 0) {
+                    stockBadge = `<span class="inline-block bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded mb-2">Stok Habis</span>`;
+                    buttonHtml = `<button disabled class="w-full bg-gray-200 text-gray-400 font-medium py-1.5 rounded-lg text-xs cursor-not-allowed">Habis</button>`;
+                } else if (stokVal <= stokMin) {
+                    stockBadge = `<span class="inline-block bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded mb-2">Sisa ${stokVal}</span>`;
+                    buttonHtml = `<button onclick="addToCart('${productId}')" class="w-full bg-blue-50 text-[#006AB4] hover:bg-[#006AB4] hover:text-white font-medium py-1.5 rounded-lg text-xs transition border border-blue-100">+ Tambah</button>`;
+                } else {
+                    stockBadge = `<span class="inline-block bg-emerald-50 text-emerald-600 text-[10px] font-medium px-2 py-0.5 rounded mb-2">Stok: ${stokVal}</span>`;
+                    buttonHtml = `<button onclick="addToCart('${productId}')" class="w-full bg-blue-50 text-[#006AB4] hover:bg-[#006AB4] hover:text-white font-medium py-1.5 rounded-lg text-xs transition border border-blue-100">+ Tambah</button>`;
+                }
 
-        return `
-            <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
-                <div>
-                    <!-- AREA FOTO PRODUK (KLIK UNTUK FULLSCREEN) -->
-                    <div class="w-full h-28 bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100 cursor-pointer group relative" 
-                         onclick="openImageModal('${imgUrl}', '${nameClean}')">
-                        <img src="${imgUrl}" alt="${nameClean}" class="w-full h-full object-contain p-1 group-hover:scale-105 transition duration-200" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x200/006AB4/ffffff?text=Toko+Marhaban';">
-                        <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                            <i class="fa-solid fa-magnifying-glass-plus text-gray-700 bg-white/80 p-1.5 rounded-full text-xs shadow-sm"></i>
+                return `
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
+                        <div>
+                            <div class="w-full h-28 bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100 cursor-pointer group relative" 
+                                 onclick="openImageModal('${imgUrl}', '${nameClean}')">
+                                <img src="${imgUrl}" alt="${nameClean}" class="w-full h-full object-contain p-1 group-hover:scale-105 transition duration-200" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x200/006AB4/ffffff?text=Toko+Marhaban';">
+                                <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <i class="fa-solid fa-magnifying-glass-plus text-gray-700 bg-white/80 p-1.5 rounded-full text-xs shadow-sm"></i>
+                                </div>
+                            </div>
+                            
+                            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
+                            <p class="text-[#D61627] font-bold text-xs mb-1">Rp ${priceFormatted}</p>
+                            ${stockBadge}
                         </div>
+                        ${buttonHtml}
                     </div>
-                    
-                    <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
-                    <p class="text-[#D61627] font-bold text-xs mb-1">Rp ${priceFormatted}</p>
-                    ${stockBadge}
-                </div>
-                ${buttonHtml}
-            </div>
-        `;
-    }).join("");
+                `;
+            }).join("");
 
-    container.innerHTML = htmlCards;
-}
+            container.innerHTML = htmlCards;
+        }
 
         function filterProducts() {
             const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
@@ -281,52 +285,51 @@
         }
 
         function addToCart(productId) {
-    const item = products.find(p => String(p.id) === String(productId));
-    if (!item) return;
+            const item = products.find(p => String(p.id) === String(productId));
+            if (!item) return;
 
-    // Ambil nilai stok produk
-    const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
-    const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+            const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
+            const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
 
-    const exist = cart.find(c => String(c.id) === String(productId));
-    if (exist) {
-        if (exist.qty < maxStok) {
-            exist.qty += 1;
-        } else {
-            alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
-            return;
+            const exist = cart.find(c => String(c.id) === String(productId));
+            if (exist) {
+                if (exist.qty < maxStok) {
+                    exist.qty += 1;
+                } else {
+                    alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
+                    return;
+                }
+            } else {
+                if (maxStok > 0) {
+                    cart.push({ ...item, qty: 1 });
+                } else {
+                    alert("Stok barang ini sudah habis.");
+                    return;
+                }
+            }
+            updateCartUI();
         }
-    } else {
-        if (maxStok > 0) {
-            cart.push({ ...item, qty: 1 });
-        } else {
-            alert("Stok barang ini sudah habis.");
-            return;
-        }
-    }
-    updateCartUI();
-}
 
         function updateQty(productId, change) {
-    const index = cart.findIndex(c => String(c.id) === String(productId));
-    if (index !== -1) {
-        const item = cart[index];
-        const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
-        const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+            const index = cart.findIndex(c => String(c.id) === String(productId));
+            if (index !== -1) {
+                const item = cart[index];
+                const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
+                const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
 
-        if (change > 0 && item.qty >= maxStok) {
-            alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
-            return;
-        }
+                if (change > 0 && item.qty >= maxStok) {
+                    alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
+                    return;
+                }
 
-        item.qty += change;
-        if (item.qty <= 0) {
-            cart.splice(index, 1);
+                item.qty += change;
+                if (item.qty <= 0) {
+                    cart.splice(index, 1);
+                }
+            }
+            updateCartUI();
+            renderModalItems();
         }
-    }
-    updateCartUI();
-    renderModalItems();
-}
 
         function updateCartUI() {
             const cartBar = document.getElementById("cartBar");
@@ -353,67 +356,65 @@
         }
 
         function renderModalItems() {
-    const container = document.getElementById("modalCartItems");
-    if (!container) return;
-    container.innerHTML = "";
+            const container = document.getElementById("modalCartItems");
+            if (!container) return;
+            container.innerHTML = "";
 
-    cart.forEach(item => {
-        const itemTotal = (item.price * item.qty).toLocaleString('id-ID');
-        const productId = String(item.id || '').replace(/'/g, "\\'");
+            cart.forEach(item => {
+                const itemTotal = (item.price * item.qty).toLocaleString('id-ID');
+                const productId = String(item.id || '').replace(/'/g, "\\'");
 
-        // 1. Ambil batas stok produk agar input tidak bisa melebihi stok
-        const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
-        const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+                const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
+                const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
 
-        container.innerHTML += `
-            <div class="py-2.5 flex justify-between items-center gap-2">
-                <div class="flex-1 pr-2">
-                    <p class="font-semibold text-sm text-gray-800 leading-snug">${item.name}</p>
-                    <p class="text-xs text-gray-500 mt-0.5">
-                        Rp ${item.price.toLocaleString('id-ID')} x ${item.qty} = <span class="text-[#D61627] font-bold">Rp ${itemTotal}</span>
-                    </p>
-                </div>
-                
-                <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50 shadow-sm shrink-0">
-                    <button onclick="updateQty('${productId}', -1)" class="w-8 h-8 text-gray-600 font-bold hover:bg-gray-200 transition flex items-center justify-center">-</button>
-                    
-                    <!-- 2. Tambahkan atribut max="${maxStok}" di bawah ini -->
-                    <input type="number" min="0" max="${maxStok}" value="${item.qty}" 
-                        onchange="setCartQty('${productId}', this.value)"
-                        onkeyup="setCartQty('${productId}', this.value)"
-                        class="w-12 h-8 text-center text-sm font-bold text-gray-800 bg-white border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#006AB4] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                    
-                    <button onclick="updateQty('${productId}', 1)" class="w-8 h-8 text-[#006AB4] font-bold hover:bg-blue-50 transition flex items-center justify-center">+</button>
-                </div>
-            </div>
-        `;
-    });
-}
+                container.innerHTML += `
+                    <div class="py-2.5 flex justify-between items-center gap-2">
+                        <div class="flex-1 pr-2">
+                            <p class="font-semibold text-sm text-gray-800 leading-snug">${item.name}</p>
+                            <p class="text-xs text-gray-500 mt-0.5">
+                                Rp ${item.price.toLocaleString('id-ID')} x ${item.qty} = <span class="text-[#D61627] font-bold">Rp ${itemTotal}</span>
+                            </p>
+                        </div>
+                        
+                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50 shadow-sm shrink-0">
+                            <button onclick="updateQty('${productId}', -1)" class="w-8 h-8 text-gray-600 font-bold hover:bg-gray-200 transition flex items-center justify-center">-</button>
+                            
+                            <input type="number" min="0" max="${maxStok}" value="${item.qty}" 
+                                onchange="setCartQty('${productId}', this.value)"
+                                onkeyup="setCartQty('${productId}', this.value)"
+                                class="w-12 h-8 text-center text-sm font-bold text-gray-800 bg-white border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#006AB4] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                            
+                            <button onclick="updateQty('${productId}', 1)" class="w-8 h-8 text-[#006AB4] font-bold hover:bg-blue-50 transition flex items-center justify-center">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
         function setCartQty(productId, newQty) {
-    let val = parseInt(newQty, 10);
-    const index = cart.findIndex(c => String(c.id) === String(productId));
-    
-    if (index !== -1) {
-        const item = cart[index];
-        const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
-        const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
+            let val = parseInt(newQty, 10);
+            const index = cart.findIndex(c => String(c.id) === String(productId));
+            
+            if (index !== -1) {
+                const item = cart[index];
+                const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
+                const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
 
-        if (val > maxStok) {
-            alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
-            val = maxStok;
-        }
+                if (val > maxStok) {
+                    alert(`Stok maksimal untuk ${item.name} hanya ${maxStok} pcs.`);
+                    val = maxStok;
+                }
 
-        if (isNaN(val) || val <= 0) {
-            cart.splice(index, 1);
-        } else {
-            cart[index].qty = val;
+                if (isNaN(val) || val <= 0) {
+                    cart.splice(index, 1);
+                } else {
+                    cart[index].qty = val;
+                }
+            }
+            
+            updateCartUI();
+            renderModalItems();
         }
-    }
-    
-    updateCartUI();
-    renderModalItems();
-}
 
         async function submitOrderToN8n() {
             const buyerName = document.getElementById("buyerName").value.trim();
@@ -461,44 +462,6 @@
             }
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            generateLetterButtons();
-            fetchProductsFromSheets();
-        });
-        
-function openImageModal(imgUrl, caption) {
-            const modal = document.getElementById("imageModal");
-            const modalImg = document.getElementById("modalImageSrc");
-            const modalCap = document.getElementById("modalImageCaption");
-
-            if (!modal || !modalImg) return;
-
-            modalImg.src = imgUrl;
-            if (modalCap) modalCap.innerText = caption || "";
-
-            modal.classList.remove("hidden");
-            document.body.style.overflow = "hidden"; // Cegah scroll latar belakang
-        }
-
-        function closeImageModal() {
-            const modal = document.getElementById("imageModal");
-            if (modal) {
-                modal.classList.add("hidden");
-                document.body.style.overflow = "auto"; // Kembalikan scroll
-            }
-        }
-
-       //!-- MODAL FULLSCREEN GAMBAR (LIGHTBOX) --
-    <div id="imageModal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm cursor-pointer" onclick="closeImageModal()">
-        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 text-3xl font-bold z-50 p-2 focus:outline-none">&times;</button>
-        <div class="max-w-3xl max-h-[85vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
-            <img id="modalImageSrc" src="" alt="Detail Produk" class="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl transition-all duration-300">
-            <p id="modalImageCaption" class="text-white text-center font-semibold mt-3 text-sm sm:text-base px-2 bg-black/40 py-1 rounded-full border border-white/20"></p>
-        </div>
-    </div>
-
-    <!-- FUNGSI JAVASCRIPT UTAMA MODAL GAMBAR -->
-    <script>
         function openImageModal(imgUrl, caption) {
             const modal = document.getElementById("imageModal");
             const modalImg = document.getElementById("modalImageSrc");
@@ -520,6 +483,11 @@ function openImageModal(imgUrl, caption) {
                 document.body.style.overflow = "auto";
             }
         }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            generateLetterButtons();
+            fetchProductsFromSheets();
+        });
     </script>
 </body>
 </html>
