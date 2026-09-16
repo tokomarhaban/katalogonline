@@ -261,6 +261,17 @@
             container.innerHTML = htmlCards;
         }
 
+        let searchTimeout = null;
+
+        function onSearchInput() {
+            // Hapus timer sebelumnya jika pengguna masih mengetik
+            clearTimeout(searchTimeout);
+
+            // Tunggu 300ms setelah ketikan terakhir baru jalankan filterProducts()
+            searchTimeout = setTimeout(() => {
+                filterProducts();
+            }, 300);
+        }
         function filterProducts() {
             const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
 
