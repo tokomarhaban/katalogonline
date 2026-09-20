@@ -487,19 +487,46 @@
             }
         }
 
-        function openImageModal(imgUrl, caption) {
-            const modal = document.getElementById("imageModal");
-            const modalImg = document.getElementById("modalImageSrc");
-            const modalCap = document.getElementById("modalImageCaption");
+        // Fungsi membuka Modal dengan Galeri Multiple Foto
+function openImageModal(productName, imagesList) {
+    const modal = document.getElementById('imageModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    
+    modalTitle.textContent = productName;
+    
+    // Jika data gambar dikirim sebagai array/daftar
+    let imgs = Array.isArray(imagesList) ? imagesList : [imagesList];
+    if (imgs.length === 0 || !imgs[0]) {
+        imgs = [`https://placehold.co/300x300/006AB4/ffffff?text=${encodeURIComponent(productName)}`];
+    }
 
-            if (!modal || !modalImg) return;
+    // Buat HTML Tampilan Utama + Thumbnail di bawahnya
+    let html = `
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
+                <img id="mainModalImg" src="${imgs[0]}" class="w-full h-full object-contain max-h-[70vh]">
+            </div>
+    `;
 
-            modalImg.src = imgUrl;
-            if (modalCap) modalCap.innerText = caption || "";
+    // Jika gambar lebih dari 1, tampilkan pilihan thumbnail
+    if (imgs.length > 1) {
+        html += `<div class="flex gap-2 mt-2 overflow-x-auto p-1">`;
+        imgs.forEach((imgSrc, idx) => {
+            html += `
+                <img src="${imgSrc}" 
+                     onclick="document.getElementById('mainModalImg').src='${imgSrc}'"
+                     class="w-16 h-16 object-cover rounded-lg border-2 border-transparent hover:border-[#006AB4] cursor-pointer transition shadow-sm">
+            `;
+        });
+        html += `</div>`;
+    }
 
-            modal.classList.remove("hidden");
-            document.body.style.overflow = "hidden";
-        }
+    html += `</div>`;
+    
+    modalBody.innerHTML = html;
+    modal.classList.remove('hidden');
+}
 
         function closeImageModal() {
             const modal = document.getElementById("imageModal");
