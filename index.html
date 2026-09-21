@@ -106,12 +106,19 @@
         </div>
     </div>
 
-    <!-- MODAL FULLSCREEN GAMBAR (LIGHTBOX) -->
-    <div id="imageModal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm cursor-pointer" onclick="closeImageModal()">
-        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 text-3xl font-bold z-50 p-2 focus:outline-none">&times;</button>
-        <div class="max-w-3xl max-h-[85vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
-            <img id="modalImageSrc" src="" alt="Detail Produk" class="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl transition-all duration-300">
-            <p id="modalImageCaption" class="text-white text-center font-semibold mt-3 text-sm sm:text-base px-2 bg-black/40 py-1 rounded-full border border-white/20"></p>
+    <!-- MODAL FULLSCREEN GAMBAR (LIGHTBOX GALERI) -->
+    <div id="imageModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="closeImageModal()">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-4 relative shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <!-- Tombol Close (X) -->
+            <button onclick="closeImageModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 z-10">
+                &times;
+            </button>
+            
+            <!-- Judul Produk -->
+            <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-3 pr-8 truncate"></h3>
+            
+            <!-- Kontainer Utama Gambar & Galeri -->
+            <div id="modalBody"></div>
         </div>
     </div>
 
@@ -175,9 +182,10 @@
 
                 if (productList && productList.length > 0) {
                     productList = productList.map((p, idx) => {
-                        const cleanName = (p.name || 'item').toLowerCase().replace(/[^a-z0-9]/g, '-');
-                        const uniqueId = p.id ? `${p.id}-${cleanName}` : `prod-${idx}-${cleanName}`;
-                        return { ...p, id: uniqueId };
+                        const rawName = p.name || p["Nama Produk"] || 'item';
+                        const cleanName = String(rawName).trim();
+                        const uniqueId = p.id ? `${p.id}-${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-')}` : `prod-${idx}`;
+                        return { ...p, name: cleanName, id: uniqueId };
                     });
 
                     productList.sort((a, b) => {
@@ -207,15 +215,27 @@
             }
 
             const htmlCards = items.map(p => {
-                const nameClean = (p.name || 'Tanpa Nama').replace(/"/g, '&quot;');
+                const nameDisplay = p.name || 'Tanpa Nama';
                 const priceFormatted = Number(p.price || 0).toLocaleString("id-ID");
                 const productId = String(p.id).replace(/'/g, "\\'");
                 
-                const imgField = p.img || p.Gambar || p.gambar || "";
-                const hasValidImg = typeof imgField === 'string' && imgField.trim().startsWith('http');
-                const imgUrl = hasValidImg 
-                    ? imgField.trim() 
-                    : `https://placehold.co/300x300/006AB4/ffffff?text=${encodeURIComponent(p.name || 'Toko Marhaban')}`;
+                // Kumpulkan daftar gambar (Multiple Image Support)
+                let imgList = [];
+                if (Array.isArray(p.images) && p.images.length > 0) {
+                    imgList = p.images;
+                } else if (p.img || p.Gambar || p.gambar) {
+                    imgList = [p.img || p.Gambar || p.gambar];
+                }
+                
+                // Filter link valid
+                imgList = imgList.filter(url => typeof url === 'string' && url.trim().startsWith('http'));
+                if (imgList.length === 0) {
+                    imgList = [`https://placehold.co/300x300/006AB4/ffffff?text=${encodeURIComponent(nameDisplay)}`];
+                }
+
+                const mainImg = imgList[0];
+                const imagesJsonAttr = encodeURIComponent(JSON.stringify(imgList));
+                const nameEscaped = encodeURIComponent(nameDisplay);
 
                 const rawStok = p.Stok !== undefined ? p.Stok : p.stok;
                 const rawStokMin = p['Stok Minimum'] !== undefined ? p['Stok Minimum'] : (p.stok_minimal !== undefined ? p.stok_minimal : p.stok_minimum);
@@ -240,16 +260,16 @@
                 return `
                     <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
                         <div>
-                            <!-- AREA FOTO PRODUK (1:1 PERSEGI PRESISI) -->
-                    <div class="w-full aspect-square bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100 cursor-pointer group relative" 
-                         onclick="openImageModal('${imgUrl}', '${nameClean}')">
-                        <img src="${imgUrl}" alt="${nameClean}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x300/006AB4/ffffff?text=Toko+Marhaban';">
-                        <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                            <i class="fa-solid fa-magnifying-glass-plus text-gray-700 bg-white/80 p-1.5 rounded-full text-xs shadow-sm"></i>
-                        </div>
-                    </div>
+                            <!-- AREA FOTO PRODUK (TETAP BISA DIKLIK WALAUPUN CUMA 1 GAMBAR) -->
+                            <div class="w-full aspect-square bg-gray-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center border border-gray-100 cursor-pointer group relative" 
+                                 onclick="openImageModal('${nameEscaped}', '${imagesJsonAttr}')">
+                                <img src="${mainImg}" alt="${nameDisplay}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x300/006AB4/ffffff?text=Toko+Marhaban';">
+                                <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <i class="fa-solid fa-magnifying-glass-plus text-gray-700 bg-white/80 p-1.5 rounded-full text-xs shadow-sm"></i>
+                                </div>
+                            </div>
                             
-                            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameClean}</h3>
+                            <h3 class="font-semibold text-gray-800 text-xs line-clamp-2 mb-1">${nameDisplay}</h3>
                             <p class="text-[#D61627] font-bold text-xs mb-1">Rp ${priceFormatted}</p>
                             ${stockBadge}
                         </div>
@@ -264,14 +284,12 @@
         let searchTimeout = null;
 
         function onSearchInput() {
-            // Hapus timer sebelumnya jika pengguna masih mengetik
             clearTimeout(searchTimeout);
-
-            // Tunggu 300ms setelah ketikan terakhir baru jalankan filterProducts()
             searchTimeout = setTimeout(() => {
                 filterProducts();
             }, 300);
         }
+
         function filterProducts() {
             const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
 
@@ -375,25 +393,21 @@
                 const itemTotal = (item.price * item.qty).toLocaleString('id-ID');
                 const productId = String(item.id || '').replace(/'/g, "\\'");
 
-                // Ambil link gambar produk (fallback jika tidak ada)
                 const imgField = item.img || item.Gambar || item.gambar || "";
                 const hasValidImg = typeof imgField === 'string' && imgField.trim().startsWith('http');
                 const imgUrl = hasValidImg 
                     ? imgField.trim() 
                     : `https://placehold.co/300x200/006AB4/ffffff?text=${encodeURIComponent(item.name || 'Toko Marhaban')}`;
 
-                // Ambil batas stok produk
                 const rawStok = item.Stok !== undefined ? item.Stok : item.stok;
                 const maxStok = rawStok !== undefined && rawStok !== "" ? Number(rawStok) : 999;
 
                 container.innerHTML += `
                     <div class="py-2.5 flex items-center justify-between gap-3">
-                        <!-- GAMBAR THUMBNAIL KECIL -->
                         <div class="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden border border-gray-200 shrink-0 flex items-center justify-center p-0.5">
                             <img src="${imgUrl}" alt="${item.name}" class="w-full h-full object-contain rounded" onerror="this.onerror=null; this.src='https://placehold.co/100/006AB4/ffffff?text=TM';">
                         </div>
 
-                        <!-- INFO DETAIL PRODUK -->
                         <div class="flex-1 min-w-0 pr-1">
                             <p class="font-semibold text-xs text-gray-800 leading-snug truncate">${item.name}</p>
                             <p class="text-[11px] text-gray-500 mt-0.5">
@@ -401,7 +415,6 @@
                             </p>
                         </div>
                         
-                        <!-- TOMBOL JUMLAH PESANAN -->
                         <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50 shadow-sm shrink-0">
                             <button onclick="updateQty('${productId}', -1)" class="w-7 h-7 text-gray-600 font-bold hover:bg-gray-200 transition flex items-center justify-center text-xs">-</button>
                             
@@ -416,6 +429,7 @@
                 `;
             });
         }
+
         function setCartQty(productId, newQty) {
             let val = parseInt(newQty, 10);
             const index = cart.findIndex(c => String(c.id) === String(productId));
@@ -487,46 +501,58 @@
             }
         }
 
-        // Fungsi membuka Modal dengan Galeri Multiple Foto
-function openImageModal(productName, imagesList) {
-    const modal = document.getElementById('imageModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalBody = document.getElementById('modalBody');
-    
-    modalTitle.textContent = productName;
-    
-    // Jika data gambar dikirim sebagai array/daftar
-    let imgs = Array.isArray(imagesList) ? imagesList : [imagesList];
-    if (imgs.length === 0 || !imgs[0]) {
-        imgs = [`https://placehold.co/300x300/006AB4/ffffff?text=${encodeURIComponent(productName)}`];
-    }
+        // FUNGSI UTAMA LIGHTBOX GAMBAR FULLSCREEN / GALERI
+        function openImageModal(encodedTitle, encodedImages) {
+            const modal = document.getElementById('imageModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            if (!modal || !modalTitle || !modalBody) return;
 
-    // Buat HTML Tampilan Utama + Thumbnail di bawahnya
-    let html = `
-        <div class="flex flex-col items-center gap-3">
-            <div class="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
-                <img id="mainModalImg" src="${imgs[0]}" class="w-full h-full object-contain max-h-[70vh]">
-            </div>
-    `;
+            const productName = decodeURIComponent(encodedTitle);
+            modalTitle.textContent = productName;
 
-    // Jika gambar lebih dari 1, tampilkan pilihan thumbnail
-    if (imgs.length > 1) {
-        html += `<div class="flex gap-2 mt-2 overflow-x-auto p-1">`;
-        imgs.forEach((imgSrc, idx) => {
-            html += `
-                <img src="${imgSrc}" 
-                     onclick="document.getElementById('mainModalImg').src='${imgSrc}'"
-                     class="w-16 h-16 object-cover rounded-lg border-2 border-transparent hover:border-[#006AB4] cursor-pointer transition shadow-sm">
+            let imgs = [];
+            try {
+                imgs = JSON.parse(decodeURIComponent(encodedImages));
+            } catch (e) {
+                imgs = [decodeURIComponent(encodedImages)];
+            }
+
+            if (!Array.isArray(imgs)) imgs = [imgs];
+            imgs = imgs.filter(url => url && String(url).trim().startsWith('http'));
+
+            if (imgs.length === 0) {
+                imgs = [`https://placehold.co/300x300/006AB4/ffffff?text=${encodeURIComponent(productName)}`];
+            }
+
+            // Tampilan Gambar Utama Fullscreen
+            let html = `
+                <div class="flex flex-col items-center gap-3">
+                    <div class="w-full aspect-square bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center border border-gray-100">
+                        <img id="mainModalImg" src="${imgs[0]}" class="w-full h-full object-contain max-h-[55vh]" alt="${productName}">
+                    </div>
             `;
-        });
-        html += `</div>`;
-    }
 
-    html += `</div>`;
-    
-    modalBody.innerHTML = html;
-    modal.classList.remove('hidden');
-}
+            // Tunjukkan thumbnail HANYA jika gambar lebih dari 1
+            if (imgs.length > 1) {
+                html += `<div class="flex gap-2 mt-1 overflow-x-auto p-1 max-w-full no-scrollbar">`;
+                imgs.forEach((imgSrc) => {
+                    html += `
+                        <img src="${imgSrc}" 
+                             onclick="document.getElementById('mainModalImg').src='${imgSrc}'"
+                             class="w-14 h-14 object-cover rounded-lg border-2 border-transparent hover:border-[#006AB4] cursor-pointer transition shadow-sm shrink-0">
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            
+            modalBody.innerHTML = html;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
 
         function closeImageModal() {
             const modal = document.getElementById("imageModal");
